@@ -1,0 +1,5 @@
+__pycache__/*
+Assets/*
+Config/__pycache__/*
+Environments/__pycache__/*
+Utils/__pycache__/*
