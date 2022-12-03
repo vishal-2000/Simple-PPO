@@ -14,6 +14,7 @@ To-Do:
 5. Run ppo.py
 
 ## Directory Structure
+```
 .
 ├── Assets
 │   ├── blocks
@@ -139,3 +140,4 @@ To-Do:
     │   └── rewardUtils.cpython-38.pyc
     ├── rewardUtils.py
     └── terminationUtils.py
+```
