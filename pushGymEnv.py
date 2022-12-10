@@ -32,7 +32,7 @@ from Config.constants import (
 )
 
 from Utils.actionUtils import get_push_end
-from Utils.rewardUtils import get_max_extent_of_target_from_bottom, get_state_reward
+from Utils.rewardUtils import get_max_extent_of_target_from_bottom, get_max_extent_of_target_from_bottom2, get_state_reward
 
 RENDER_HEIGHT = 720
 RENDER_WIDTH = 960
@@ -41,7 +41,12 @@ class pushGymEnv(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], 'video.frames_per_second': 50}
 
     def  __init__(self,
+                    gamma1=1,
+                    gamma2=1,
+                    beta2=1,
+                    beta3=1,
                     maxActions=15, # max num. of actions per episode
+                    guiOn=False,
                     renders=False) -> None:
 
         print("init")
@@ -53,7 +58,7 @@ class pushGymEnv(gym.Env):
         self._p = None
 
         
-        if self._renders:
+        if self._renders or guiOn:
             self.env = Environment(gui=True)
             self._p = self.env.client_id
         else:
@@ -70,8 +75,8 @@ class pushGymEnv(gym.Env):
         observation_low = np.array([-1, -1, -1, -2*np.pi, 0, 0, 0, 
                                     -1, -1, -1, -2*np.pi, 0, 0, 0], dtype=float)
 
-        action_high = np.array([WORKSPACE_LIMITS[0][1], WORKSPACE_LIMITS[1][1], WORKSPACE_LIMITS[2][1], 2*np.pi, 1], dtype=np.float32) # np.array([1, 1, 1, 2*np.pi, 1], dtype=float)
-        action_low = np.array([WORKSPACE_LIMITS[0][0], WORKSPACE_LIMITS[1][0], WORKSPACE_LIMITS[2][0], 0, 0], dtype=np.float32)
+        action_high = np.array([WORKSPACE_LIMITS[0][1], WORKSPACE_LIMITS[1][1], WORKSPACE_LIMITS[2][1], 2*np.pi, 0.1], dtype=np.float32) # np.array([1, 1, 1, 2*np.pi, 1], dtype=float)
+        action_low = np.array([WORKSPACE_LIMITS[0][0], WORKSPACE_LIMITS[1][0], WORKSPACE_LIMITS[2][0], 0, 0.0], dtype=np.float32)
 
         self.observation_space = spaces.Box(observation_low, observation_high, dtype=float)
         self.action_space = spaces.Box(action_low, action_high, dtype=np.float32)
@@ -85,6 +90,8 @@ class pushGymEnv(gym.Env):
         '''Reset env and create the test case
         '''
         self.env.reset() # Reset environment
+
+        self.envStepCounter = 0
 
         self.testcase = TestCase1(self.env) #, self._p)
         success = False
@@ -133,10 +140,13 @@ class pushGymEnv(gym.Env):
         Push end_pos = [push_start[0] + d*cos(theta), push_start[1] + d*sin(theta), push_start[2]]
         '''
         # Get push parameters
+        # print("Action: {}".format(action))
         push_start = np.array([action[0], action[1], action[2]], dtype=float)
         push_end = get_push_end(push_start, action[3], action[4])
         # Perform push
-        self.env.push(push_start, push_end)
+        success = self.env.push(push_start, push_end)
+        if success==False:
+            print("Action failed to complete")
         # Get observatino after push
         self._observation = self.getFullObservation()
 
@@ -146,19 +156,49 @@ class pushGymEnv(gym.Env):
 
         return self._observation, reward, done, {}
 
-    def render(self, close=False):
-        pass
+    def render(self, mode='human', close=False):
+        # if mode != "rgb_array":
+        return np.array([])
+
+    def get_object_interaction_reward(self):
+        '''Calculates and returns the Object Interaction Reward for the current (state, action, prev_state) pair
+        '''
+        cartesian_diff = 0
+        yaw_diff = 0
+        return cartesian_diff, yaw_diff
+
+    def get_goal_distance_reward(self):
+        '''Calculates the reward based on the difference in the distance between 
+            the (current-object and the edge) and the (previous-pose and the edge)
+        '''
+        goal_dist_rew = 0
+        return goal_dist_rew
+
+    def get_basic_grasp_reward(self):
+        '''Checks if the object is graspable or not (based on whether it is projecting out of the surface) and returns 
+            the appropriate reward
+        '''
+        grasp_reward = 0
+        return grasp_reward
 
     def _reward(self):
         '''Return the reward obtained after performing the current action
         '''
-        cmap, hmap, _ = get_true_heightmap(self.env)
-        temp = cv2.cvtColor(cmap, cv2.COLOR_RGB2HSV)
-        target_mask = cv2.inRange(temp, TARGET_LOWER, TARGET_UPPER)
-        bottom_mask = cv2.inRange(temp, orange_lower, orange_upper)
         bottomPos, bottomOrn = self._p.getBasePositionAndOrientation(self.body_ids[0])
         targetPos, targetOrn = self._p.getBasePositionAndOrientation(self.body_ids[1])
-        max_extents = get_max_extent_of_target_from_bottom(bottomPos, bottomOrn, target_mask, bottom_mask, self.body_ids[0], self.testcase.current_bottom_size, is_viz=False)
+
+
+        
+        max_extents = get_max_extent_of_target_from_bottom2(bottomPos=bottomPos, bottomOrn=bottomOrn, current_bottom_obj_size=self.testcase.current_bottom_size,
+                                                            targetPos=targetPos, targetOrn=targetOrn, current_target_obj_size=self.testcase.current_target_size, is_viz=False)
+
+        # cmap, hmap, _ = get_true_heightmap(self.env)
+        # temp = cv2.cvtColor(cmap, cv2.COLOR_RGB2HSV)
+        # target_mask = cv2.inRange(temp, TARGET_LOWER, TARGET_UPPER)
+        # bottom_mask = cv2.inRange(temp, orange_lower, orange_upper)
+        # bottomPos, bottomOrn = self._p.getBasePositionAndOrientation(self.body_ids[0])
+        # targetPos, targetOrn = self._p.getBasePositionAndOrientation(self.body_ids[1])
+        # max_extents = get_max_extent_of_target_from_bottom(bottomPos, bottomOrn, target_mask, bottom_mask, self.body_ids[0], self.testcase.current_bottom_size, is_viz=False)
         reward = get_state_reward(bottomPos=bottomPos, 
                                 targetPos=targetPos, bottomSize=self.testcase.current_bottom_size, 
                                 targetSize=self.testcase.current_target_size, max_extents=max_extents, 
@@ -174,7 +214,7 @@ class pushGymEnv(gym.Env):
         done = False
         if reward == 1: # Reached the edge
             done=True
-        if targetPos[2] < bottomPos[2] + self.testcase.current_bottom_size[2]/2 + self.testcase.current_target_size[2]/2 - 0.005: # Object fell on the ground
+        if targetPos[2] < (bottomPos[2] + self.testcase.current_bottom_size[2]/2 + self.testcase.current_target_size[2]/2 - 0.005): # Object fell on the ground
             done=True
         if self.envStepCounter >= self.maxActions: # Takes more than max actions
             done=True

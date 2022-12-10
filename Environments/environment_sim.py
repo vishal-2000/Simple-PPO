@@ -578,6 +578,8 @@ class Environment:
             length = 0.005
         vec = vec / length
 
+        # print("I am here")
+
         # Align against push direction.
         theta = np.arctan2(vec[1], vec[0])
         rot = p.getQuaternionFromEuler([np.pi / 2, np.pi / 2, theta])
@@ -587,14 +589,24 @@ class Environment:
 
         # Execute push.
         success = self.move_joints(self.ik_rest_joints)
+
+        # print("I am here too!")
         if success:
             success = self.move_ee_pose((over0, rot))
+            # print("I am here too yo man!")
+            # print(success)
         if success:
             success = self.straight_move(over0, pos0, rot, detect_force=True)
+            # print("I am here too yo yo man!")
+            # print(success)
         if success:
             success = self.straight_move(pos0, pos1, rot, speed, detect_force=True)
+            # print("I am here too yo yo yo man!")
+            # print(success)
         if success:
             success = self.straight_move(pos1, over1, rot)
+            # print("I am here too yo yo yo yo man!")
+            # print(success)
         success &= self.go_home()
 
         # print(f"Push from {pose0} to {pose1}, {success}")

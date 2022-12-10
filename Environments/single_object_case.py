@@ -29,7 +29,7 @@ class TestCase1:
             'bottom_obj': np.hstack([COLOR_SPACE[3, :], np.array([1.0])]),
             'target_obj': np.hstack([COLOR_SPACE[0, :], np.array([1.0])]) # np.hstack([(TARGET_LOWER.astype(float)+TARGET_UPPER.astype(float))/(255.0*2), np.array([1.0])]),
         }
-        self.current_bottom_obj_height = 0
+        # self.current_bottom_obj_height = 0
         self.current_bottom_size = np.zeros(shape=(3, ))
         self.current_target_size = np.zeros(shape=(3, ))
         self.current_bottom_6d_pose = np.zeros(shape=(6, ))
@@ -98,7 +98,7 @@ class TestCase1:
                 high=[bottom_obj_pos[0] + bottom_obj_size[0]/2, bottom_obj_pos[1] + bottom_obj_size[1]/2, bottom_obj_pos[2] + bottom_obj_size[2]/2 + target_obj_size[2]/2 + 0.04],
                 size=(3, )
             )
-            is_valid_pos = self.check_target_within_bottom_bounds(target_obj_pos)
+            is_valid_pos = self.check_point_within_bottom_bounds(target_obj_pos, threshold=(self.current_target_size[0]+self.current_target_size[1])/2) # Check if COM of target is within bottom bounds
 
         target_obj_orientation = p.getQuaternionFromEuler([0, 0, np.random.uniform(low=0, high=2*np.pi)])
 
@@ -123,7 +123,7 @@ class TestCase1:
 
         return body_ids, success
 
-    def check_target_within_bottom_bounds(self, target_obj_pos):
+    def check_point_within_bottom_bounds(self, target_obj_pos, threshold=0.02):
         '''Checks if the target object is within the bottom object bounds
         '''
         yaw = self.current_bottom_6d_pose[5]
@@ -133,8 +133,8 @@ class TestCase1:
         orn_vec = np.array([np.cos(yaw), np.sin(yaw)])
         orn_perpendicular = np.array([-np.sin(yaw), np.cos(yaw)])
 
-        ext1 = abs(np.dot(orn_vec, target_wrt_bottom_com)) - self.current_bottom_size[0]/2 # length component
-        ext2 = abs(np.dot(orn_perpendicular, target_wrt_bottom_com)) - self.current_bottom_size[1]/2 # breadth/width component
+        ext1 = abs(np.dot(orn_vec, target_wrt_bottom_com)) - self.current_bottom_size[0]/2 + threshold # + (self.current_target_size[0]+self.current_target_size[1])/2 # length component
+        ext2 = abs(np.dot(orn_perpendicular, target_wrt_bottom_com)) - self.current_bottom_size[1]/2 + threshold  # + (self.current_target_size[0]+self.current_target_size[1])/2# breadth/width component
 
         if ext1 < 0 and ext2 < 0:
             return True

@@ -12,6 +12,47 @@ from Config.constants import (
     # MIN_GRASP_THRESHOLDS
 )
 
+def get_max_extent_of_target_from_bottom2(bottomPos, bottomOrn, current_bottom_obj_size, 
+                                            targetPos, targetOrn, current_target_obj_size, is_viz=False):
+    '''Calculates in pixels, the max outward extent of the target object from the bottom object
+    '''
+    bottomYaw = p.getEulerFromQuaternion(bottomOrn)[2] # self.current_bottom_6d_pose[5]
+    targetYaw = p.getEulerFromQuaternion(targetOrn)[2]
+    target_cartesian_pos = np.array(targetPos, dtype=float).reshape((3, 1)) # target_obj_pos[0:2]
+    bottom_com = np.array(bottomPos, dtype=float).reshape((3, 1)) # self.current_bottom_6d_pose[0:2]
+    target_wrt_bottom_com = target_cartesian_pos[0:2] - bottom_com[0:2]
+
+    l = current_target_obj_size[0]
+    b = current_target_obj_size[1]
+
+    targetCornersStandard = np.array([
+        [l/2, -l/2, -l/2, l/2],
+        [b/2, b/2, -b/2, -b/2]
+    ], dtype=float)
+
+    R = np.array([
+        [np.cos(targetYaw), -1*np.sin(targetYaw)],
+        [np.sin(targetYaw), np.cos(targetYaw)]
+    ], dtype=float)
+
+    targetCornerswrtCOM = R @ targetCornersStandard
+
+    targetCornerswrtBottomCom = targetCornerswrtCOM + target_wrt_bottom_com
+
+    targetCornerswrtBottomCom = targetCornerswrtBottomCom.reshape((2, 4))
+
+    orn_vec = np.array([np.cos(bottomYaw), np.sin(bottomYaw)], dtype=float).reshape((2, 1))
+    orn_perpendicular = np.array([-np.sin(bottomYaw), np.cos(bottomYaw)]).reshape((2, 1))
+
+    ext1 = np.max(abs(orn_vec.T @ targetCornerswrtBottomCom) - current_bottom_obj_size[0]/2)
+    ext2 = np.max(abs(orn_perpendicular.T @ targetCornerswrtBottomCom) - current_bottom_obj_size[1]/2)
+
+    return np.array([ext1, ext2], dtype=float)
+
+    # ext1 = abs(np.dot(orn_vec, target_wrt_bottom_com)) - self.current_bottom_size[0]/2  # + (self.current_target_size[0]+self.current_target_size[1])/2 # length component
+    # ext2 = abs(np.dot(orn_perpendicular, target_wrt_bottom_com)) - self.current_bottom_size[1]/2 
+
+
 def get_max_extent_of_target_from_bottom(bottomPos, bottomOrn, target_mask, bottom_mask, bottom_obj_body_id, current_bottom_obj_size, is_viz=False):
     '''Calculates in pixels, the max outward extent of the target object from the bottom object
     '''
@@ -72,11 +113,11 @@ def get_state_reward(bottomPos,
                     MIN_GRASP_EXTENT_THRESH):
     '''
     '''
-    if targetPos[2] < bottomPos[2] + bottomSize[2]/2 + targetSize[2]/2 - 0.005: # Object fell down
-        # print("Object fell down")
+    if targetPos[2] < (bottomPos[2] + bottomSize[2]/2 + targetSize[2]/2 - 0.005): # Object fell down
+        print("Object fell down")
         return -0.01
     elif (max_extents[0] > MIN_GRASP_EXTENT_THRESH[0]) or (max_extents[1] > MIN_GRASP_EXTENT_THRESH[1]): # Object is now graspable
-        # print("Max extents: {}, MIN GRASP EXTENT: {}".format(max_extents, MIN_GRASP_EXTENT_THRESH))
+        print("Max extents: {}, MIN GRASP EXTENT: {}".format(max_extents, MIN_GRASP_EXTENT_THRESH))
         return 1.0
     else: # Nothing much happened
         return -0.01 # for fast achievement of goal
