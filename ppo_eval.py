@@ -15,11 +15,11 @@ from stable_baselines3.common.env_util import make_vec_env
 from pushGymEnv import pushGymEnv
 
 def main():
-    model_name = 'test_model5'
+    model_name = 'test_model0'
 
     env = pushGymEnv(renders=True)
 
-    model = PPO.load(os.path.join(currentdir, 'Results', model_name), env=env)
+    model = PPO.load(os.path.join(currentdir, 'Results/New_Rewards', model_name), env=env)
 
     print(evaluate_policy(model=model, env=env, n_eval_episodes=10, render=True, return_episode_rewards=True))
 

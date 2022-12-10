@@ -24,7 +24,7 @@ from pushGymEnv import pushGymEnv
 
 def main():
 
-    model_name = 'test_model5'
+    model_name = 'test_model0'
 
     env = make_vec_env(pushGymEnv, n_envs=1) # pushGymEnv()
     env = VecNormalize(env, norm_obs=True, norm_reward=True)# , clip_obs=10.)
@@ -32,10 +32,10 @@ def main():
     # check_env(env)
 
     model = PPO("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=29000, progress_bar=True) # Total number of env steps = 25000
+    model.learn(total_timesteps=10, progress_bar=True) # Total number of env steps = 25000
     print("----------------------------Training Complete----------------------------")
-    model.save(os.path.join(currentdir, 'Results', model_name))
-    stats_path = os.path.join(currentdir, 'Results', model_name+"vec_normalize.pkl")
+    model.save(os.path.join(currentdir, 'Results/New_Rewards', model_name))
+    stats_path = os.path.join(currentdir, 'Results/New_Rewards', model_name+"vec_normalize.pkl")
     env.save(stats_path)
 
 if __name__=="__main__":

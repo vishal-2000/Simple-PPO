@@ -1,5 +1,7 @@
 '''Test Case 1
 Only two objects in the scene, on big object on the ground, and one small object on top of the big object
+
+Author: Vishal Reddy Mandadi
 '''
 
 import pybullet as p
