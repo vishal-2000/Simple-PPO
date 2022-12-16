@@ -19,7 +19,7 @@ def main():
 
     env = pushGymEnv(renders=True)
 
-    model = PPO.load(os.path.join(currentdir, 'Results/New_Rewards', model_name), env=env)
+    model = PPO.load(os.path.join(currentdir, 'Results/model1_cont/model1_cont.zip'), env=env) # PPO.load(os.path.join(currentdir, 'Results/New_Rewards', model_name), env=env)
 
     print(evaluate_policy(model=model, env=env, n_eval_episodes=10, render=True, return_episode_rewards=True))
 

@@ -154,7 +154,7 @@ class pushGymEnv(gym.Env):
 
         Push end_pos = [push_start[0] + d*cos(theta), push_start[1] + d*sin(theta), push_start[2]]
         '''
-        print("Current State-Action: -----------------------------------------------------")
+        # print("Current State-Action: -----------------------------------------------------")
         # Get push parameters
         # print("Action: {}".format(action))
         action[4] = action[4]/1000
@@ -163,13 +163,14 @@ class pushGymEnv(gym.Env):
         # Perform push
         success = self.env.push(push_start, push_end)
         if success==False:
-            print("Action failed to complete")
+            pass
+            # print("Action failed to complete")
         # Get observatino after push
-        print("PreviousObservation: {}".format(self._observation))
+        # print("PreviousObservation: {}".format(self._observation))
 
         self._observation = self.getFullObservation()
 
-        print("Action: {}\nNextObservation: {}".format(action, self._observation))
+        # print("Action: {}\nNextObservation: {}".format(action, self._observation))
 
         self.envStepCounter += 1
         reward = self._reward()
@@ -181,8 +182,15 @@ class pushGymEnv(gym.Env):
         return self._observation, reward, done, {}
 
     def render(self, mode='human', close=False):
-        # if mode != "rgb_array":
-        return np.array([])
+        if mode != "rgb_array":
+            return np.array([])
+
+        for config in self.env.agent_cams:
+            color_img, _, _ = self.env.render_camera(config)
+        rgb_array = np.array(color_img)
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+        # (_, _, px, _, _) = self._p.
 
     def getSimpleReward(self):
         '''Simple and sparse grasp reward
@@ -274,7 +282,7 @@ class pushGymEnv(gym.Env):
 
         reward = self.gamma1*oir1 + self.gamma2*oir2 + self.beta2*gdr + self.beta3*er
 
-        print("Component Rewards:\nOIR1: {}\tOIR2: {}\tGDR: {}\tER: {}\tAggregate: {}".format(oir1, oir2, gdr, er, reward))
+        # print("Component Rewards:\nOIR1: {}\tOIR2: {}\tGDR: {}\tER: {}\tAggregate: {}".format(oir1, oir2, gdr, er, reward))
 
         return reward
 

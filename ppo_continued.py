@@ -25,7 +25,7 @@ from pushGymEnv import pushGymEnv
 import argparse
 import json
 
-def main(gamma1, gamma2, beta2, beta3, timesteps, model_name):
+def main(gamma1, gamma2, beta2, beta3, timesteps, model_name, cont_model):
 
     model_name = model_name
 
@@ -39,6 +39,7 @@ def main(gamma1, gamma2, beta2, beta3, timesteps, model_name):
     total_timesteps = timesteps
 
     model_args = {
+        "Continued training from": cont_model,
         "model_name": model_name,
         "env_config": env_args,
         "total_timesteps": total_timesteps,
@@ -53,7 +54,9 @@ def main(gamma1, gamma2, beta2, beta3, timesteps, model_name):
     # It will check your custom environment and output additional warnings if needed
     # check_env(env)
 
-    model = PPO(model_args['policy_type'], env, verbose=1)
+    # model = PPO(model_args['policy_type'], env, verbose=1)
+    model = PPO.load(os.path.join(currentdir, 'Results/model1/model1.zip'), env=env) 
+
     model.learn(total_timesteps=model_args['total_timesteps'], progress_bar=True) # Total number of env steps = 25000
     print("----------------------------Training Complete----------------------------")
 
@@ -77,24 +80,8 @@ if __name__=="__main__":
     parser.add_argument('--beta3', type=float, default=1, help="Value of beta3")
     parser.add_argument('--timesteps', type=int, default=20, help="Number of timesteps to run the algo")
     parser.add_argument('--model_name', type=str, default="model0", help="Name of the model, must be unique")
+    parser.add_argument('--cont_model', type=str, default="Unknown", help="Name the model from which the training is continued")
 
     args = parser.parse_args()
 
-    main(args.gamma1, args.gamma2, args.beta2, args.beta3, args.timesteps, args.model_name)
-
-# env = make_vec_env("CartPole-v1", n_envs=1)
-
-# model = PPO("MlpPolicy", env, verbose=1)
-# model.learn(total_timesteps=25000)
-# model.save("ppo_cartpole")
-
-# del model
-
-# model = PPO.load("ppo_cartpole")
-# obs = env.reset()
-
-# while True:
-#     action, _states = model.predict(obs)
-#     obs, rewards, dones, info = env.step(action)
-#     env.render()
-
+    main(args.gamma1, args.gamma2, args.beta2, args.beta3, args.timesteps, args.model_name, args.cont_model)
