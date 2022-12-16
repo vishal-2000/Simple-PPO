@@ -25,7 +25,7 @@ from pushGymEnv import pushGymEnv
 import argparse
 import json
 
-def main(gamma1, gamma2, beta2, beta3, timesteps, model_name):
+def main(gamma1, gamma2, beta2, beta3, beta4, timesteps, model_name):
 
     model_name = model_name
 
@@ -33,7 +33,8 @@ def main(gamma1, gamma2, beta2, beta3, timesteps, model_name):
         'gamma1': gamma1,
         'gamma2': gamma2,
         'beta2': beta2,
-        'beta3': beta3
+        'beta3': beta3,
+        'beta4': beta4
     }
 
     total_timesteps = timesteps
@@ -75,12 +76,13 @@ if __name__=="__main__":
     parser.add_argument('--gamma2', type=float, default=1, help="Value of gamma2")
     parser.add_argument('--beta2', type=float, default=1, help="Value of beta2")
     parser.add_argument('--beta3', type=float, default=1, help="Value of beta3")
+    parser.add_argument('--beta4', type=float, default=1, help="Value of beta4")
     parser.add_argument('--timesteps', type=int, default=20, help="Number of timesteps to run the algo")
     parser.add_argument('--model_name', type=str, default="model0", help="Name of the model, must be unique")
 
     args = parser.parse_args()
 
-    main(args.gamma1, args.gamma2, args.beta2, args.beta3, args.timesteps, args.model_name)
+    main(args.gamma1, args.gamma2, args.beta2, args.beta3, args.beta4, args.timesteps, args.model_name)
 
 # env = make_vec_env("CartPole-v1", n_envs=1)
 

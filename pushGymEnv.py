@@ -45,12 +45,14 @@ class pushGymEnv(gym.Env):
                     gamma2=1,
                     beta2=1,
                     beta3=1,
+                    beta4=1,
                     maxActions=30, #15, # max num. of actions per episode
                     guiOn=False,
                     renders=False) -> None:
 
         print("init")
         self._observation = []
+        self._action = None
         self.envStepCounter = 0
         self.terminateCurrentEpisode = False
         self.maxActions = maxActions
@@ -62,6 +64,7 @@ class pushGymEnv(gym.Env):
         self.gamma2 = gamma2
         self.beta2 = beta2
         self.beta3 = beta3
+        self.beta4 = beta4
 
         self.prevState = {
             'target_pose': np.zeros(shape=(4), dtype=float), # x, y, z, yaw
@@ -158,6 +161,7 @@ class pushGymEnv(gym.Env):
         # Get push parameters
         # print("Action: {}".format(action))
         action[4] = action[4]/1000
+        self._action = action
         push_start = np.array([action[0], action[1], action[2]], dtype=float)
         push_end = get_push_end(push_start, action[3], action[4])
         # Perform push
@@ -272,6 +276,29 @@ class pushGymEnv(gym.Env):
         else:
             return 0.0
 
+    def get_ee_obj_distance_reward(self):
+        '''A reward signal that encourages to predict the ee_pose close to the object's COM
+
+        Concentric regional in nature
+        '''
+        EOR = 0
+        ee_obj_dist = np.linalg.norm(self.prevState['target_pose'][0:3] - self._action[0:3])
+
+        threshold = 0.5 * np.max(np.array([
+            self.testcase.current_target_size[0],
+            self.testcase.current_target_size[1],
+            self.testcase.current_target_size[2]
+        ], dtype=float))
+
+        if ee_obj_dist > threshold:
+            EOR = -1 + np.exp(1/(0.8 + ee_obj_dist)) # Adding 0.5 to prevent the reward from overshadowing other rewards
+        else:
+            EOR = -1 + np.exp(1/(0.8 + threshold))
+
+        return EOR
+        
+
+
     def _reward(self):
         '''Return the reward obtained after performing the current action
         '''
@@ -279,8 +306,9 @@ class pushGymEnv(gym.Env):
         oir1, oir2 = self.get_object_interaction_reward()
         gdr = self.get_goal_distance_reward()
         er = self.get_basic_grasp_reward() # Called the edge reward (er)
+        eor = self.get_ee_obj_distance_reward()
 
-        reward = self.gamma1*oir1 + self.gamma2*oir2 + self.beta2*gdr + self.beta3*er
+        reward = self.gamma1*oir1 + self.gamma2*oir2 + self.beta2*gdr + self.beta3*er + self.beta4*eor
 
         # print("Component Rewards:\nOIR1: {}\tOIR2: {}\tGDR: {}\tER: {}\tAggregate: {}".format(oir1, oir2, gdr, er, reward))
 
