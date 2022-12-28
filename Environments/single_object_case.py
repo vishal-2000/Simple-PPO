@@ -76,7 +76,8 @@ class TestCase1:
 
         euler_vals = None
         if bottom_obj=='default':
-            bottom_obj_orientation = p.getQuaternionFromEuler([0, 0, 0])
+            euler_vals = [0, 0, 0]
+            bottom_obj_orientation = p.getQuaternionFromEuler(euler_vals)
         elif bottom_obj=='random':
             euler_vals = [0, 0, np.random.uniform(low=0, high=2*np.pi)]
             bottom_obj_orientation = p.getQuaternionFromEuler(euler_vals)

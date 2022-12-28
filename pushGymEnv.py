@@ -114,7 +114,7 @@ class pushGymEnv(gym.Env):
         self.testcase = TestCase1(self.env) #, self._p)
         success = False
         while not success:
-            self.body_ids, success = self.testcase.sample_test_case(bottom_obj='random')
+            self.body_ids, success = self.testcase.sample_test_case(bottom_obj='default') #'random')
 
         self._observation = self.getFullObservation()
         return self._observation
